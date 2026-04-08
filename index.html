@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>三角之塔 - 三角方程学习游戏</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+:root{
+  --bg:#0a0a1a;--bg2:#12122a;--neon-cyan:#00f0ff;--neon-pink:#ff2d95;
+  --neon-green:#39ff14;--neon-yellow:#ffe600;--neon-purple:#b44dff;
+  --sin-color:#ff4466;--cos-color:#4488ff;--tan-color:#ffaa00;
+  --glass:rgba(255,255,255,0.04);--glass-border:rgba(255,255,255,0.08);
+}
+body{background:var(--bg);color:#e0e0e0;font-family:'Orbitron','Segoe UI',sans-serif;overflow-x:hidden;min-height:100vh}
+canvas{display:block}
+
+/* Shared UI */
+.neon-text{text-shadow:0 0 10px var(--neon-cyan),0 0 30px var(--neon-cyan),0 0 60px rgba(0,240,255,0.3)}
+.neon-pink-text{text-shadow:0 0 10px var(--neon-pink),0 0 30px var(--neon-pink)}
+.neon-green-text{text-shadow:0 0 10px var(--neon-green),0 0 30px var(--neon-green)}
+
+.btn{
+  background:transparent;border:2px solid var(--neon-cyan);color:var(--neon-cyan);
+  padding:14px 36px;font-size:16px;font-family:'Orbitron',sans-serif;cursor:pointer;
+  text-transform:uppercase;letter-spacing:3px;position:relative;overflow:hidden;
+  transition:all .3s;border-radius:4px;
+}
+.btn:hover{background:rgba(0,240,255,0.1);box-shadow:0 0 20px rgba(0,240,255,0.3),inset 0 0 20px rgba(0,240,255,0.1);transform:translateY(-2px)}
+.btn:active{transform:translateY(0)}
+.btn-pink{border-color:var(--neon-pink);color:var(--neon-pink)}
+.btn-pink:hover{background:rgba(255,45,149,0.1);box-shadow:0 0 20px rgba(255,45,149,0.3)}
+.btn-green{border-color:var(--neon-green);color:var(--neon-green)}
+.btn-green:hover{background:rgba(57,255,20,0.1);box-shadow:0 0 20px rgba(57,255,20,0.3)}
+.btn-small{padding:8px 20px;font-size:12px;letter-spacing:2px}
+
+.glass-panel{
+  background:var(--glass);border:1px solid var(--glass-border);
+  border-radius:12px;backdrop-filter:blur(10px);
+}
+
+/* Screens */
+.screen{display:none;width:100%;min-height:100vh;position:relative}
+.screen.active{display:flex}
+
+/* BG particles */
+#bg-canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+
+/* Main Menu */
+#menu-screen{flex-direction:column;align-items:center;justify-content:center;z-index:1;gap:20px}
+.menu-title{font-size:clamp(36px,8vw,72px);font-weight:900;letter-spacing:8px;margin-bottom:10px}
+.menu-subtitle{font-size:clamp(14px,2.5vw,20px);color:rgba(255,255,255,0.5);margin-bottom:40px;letter-spacing:4px;font-weight:400}
+.menu-tower{position:relative;width:200px;height:260px;margin-bottom:30px}
+.tower-block{
+  position:absolute;left:50%;transform:translateX(-50%);
+  border:2px solid;border-radius:6px;display:flex;align-items:center;justify-content:center;
+  font-size:11px;letter-spacing:2px;font-weight:700;
+}
+.tower-block:nth-child(1){width:120px;height:60px;bottom:0;border-color:var(--neon-cyan);color:var(--neon-cyan);box-shadow:0 0 15px rgba(0,240,255,0.3)}
+.tower-block:nth-child(2){width:100px;height:60px;bottom:65px;border-color:var(--neon-pink);color:var(--neon-pink);opacity:.4}
+.tower-block:nth-child(3){width:80px;height:60px;bottom:130px;border-color:var(--neon-purple);color:var(--neon-purple);opacity:.25}
+.tower-block:nth-child(4){width:60px;height:40px;bottom:195px;border-color:var(--neon-yellow);color:var(--neon-yellow);opacity:.15}
+.tower-base{position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:160px;height:4px;background:var(--neon-cyan);box-shadow:0 0 15px var(--neon-cyan);border-radius:2px}
+
+/* Level Select */
+#level-screen{flex-direction:column;align-items:center;padding:40px 20px;z-index:1}
+.level-header{text-align:center;margin-bottom:40px}
+.level-header h2{font-size:clamp(20px,4vw,32px);margin-bottom:8px}
+.level-header p{color:rgba(255,255,255,0.4);font-size:14px;letter-spacing:2px}
+.zone-badge{
+  display:inline-block;padding:6px 16px;border:1px solid var(--neon-cyan);border-radius:20px;
+  font-size:11px;letter-spacing:3px;color:var(--neon-cyan);margin-bottom:16px;
+}
+.levels-grid{display:flex;gap:24px;flex-wrap:wrap;justify-content:center;max-width:900px}
+.level-card{
+  width:260px;padding:28px 24px;cursor:pointer;transition:all .3s;position:relative;overflow:hidden;
+}
+.level-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,transparent,var(--neon-cyan),transparent);opacity:0;transition:opacity .3s;
+}
+.level-card:hover::before{opacity:1}
+.level-card:hover{transform:translateY(-4px);border-color:rgba(0,240,255,0.3);box-shadow:0 8px 30px rgba(0,240,255,0.1)}
+.level-num{font-size:36px;font-weight:900;color:var(--neon-cyan);margin-bottom:8px}
+.level-eq{font-size:18px;color:#fff;margin-bottom:12px;font-weight:700}
+.level-desc{font-size:12px;color:rgba(255,255,255,0.4);line-height:1.6;letter-spacing:1px}
+.level-card.completed .level-num{color:var(--neon-green)}
+.level-card.completed::after{content:'✓';position:absolute;top:16px;right:16px;color:var(--neon-green);font-size:20px}
+.level-card.locked{opacity:.35;pointer-events:none}
+.back-btn{position:absolute;top:20px;left:20px;z-index:10}
+
+/* Game Screen */
+#game-screen{flex-direction:row;z-index:1;height:100vh}
+.game-left{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;position:relative}
+.game-right{
+  width:320px;padding:24px;overflow-y:auto;border-left:1px solid var(--glass-border);
+  background:rgba(10,10,26,0.9);
+}
+
+/* Question bar */
+.question-bar{
+  width:100%;max-width:600px;text-align:center;margin-bottom:16px;
+}
+.question-bar .level-tag{font-size:11px;letter-spacing:3px;color:var(--neon-cyan);margin-bottom:6px}
+.question-bar .question{font-size:clamp(20px,3.5vw,28px);font-weight:700;letter-spacing:2px}
+
+/* Unit circle area */
+.circle-container{position:relative;touch-action:none}
+#unit-circle{cursor:crosshair}
+
+/* Values display */
+.values-display{
+  display:flex;gap:20px;margin-top:16px;flex-wrap:wrap;justify-content:center;
+}
+.val-box{
+  padding:10px 18px;border-radius:8px;text-align:center;min-width:120px;
+}
+.val-box.sin-box{border:1px solid var(--sin-color);background:rgba(255,68,102,0.08)}
+.val-box.cos-box{border:1px solid var(--cos-color);background:rgba(68,136,255,0.08)}
+.val-box.tan-box{border:1px solid var(--tan-color);background:rgba(255,170,0,0.08)}
+.val-label{font-size:10px;letter-spacing:2px;opacity:.6;margin-bottom:4px}
+.val-num{font-size:18px;font-weight:700}
+.val-box.sin-box .val-num{color:var(--sin-color)}
+.val-box.cos-box .val-num{color:var(--cos-color)}
+.val-box.tan-box .val-num{color:var(--tan-color)}
+
+/* Angle display */
+.angle-display{
+  margin-top:12px;font-size:14px;color:rgba(255,255,255,0.6);letter-spacing:2px;text-align:center;
+}
+.angle-display span{color:#fff;font-weight:700;font-size:18px}
+
+/* Answer area */
+.answer-area{margin-top:16px;display:flex;gap:12px;flex-wrap:wrap;justify-content:center;align-items:center}
+.answer-slot{
+  width:100px;height:48px;border:2px dashed rgba(255,255,255,0.2);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;
+  transition:all .3s;position:relative;
+}
+.answer-slot.filled{border-style:solid;border-color:var(--neon-green);color:var(--neon-green);background:rgba(57,255,20,0.08)}
+.answer-slot.wrong{border-color:var(--neon-pink);animation:shake .4s}
+.submit-angle-btn{margin-left:8px}
+.answers-needed{font-size:11px;color:rgba(255,255,255,0.35);letter-spacing:2px;margin-top:6px;text-align:center}
+
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+/* Right Panel */
+.panel-section{margin-bottom:24px}
+.panel-title{
+  font-size:11px;letter-spacing:3px;color:var(--neon-cyan);margin-bottom:12px;
+  padding-bottom:8px;border-bottom:1px solid var(--glass-border);
+}
+.formula-item{
+  padding:8px 12px;margin-bottom:6px;border-radius:6px;font-size:13px;
+  background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);
+  line-height:1.6;font-family:'Courier New',monospace;color:rgba(255,255,255,0.7);
+}
+.formula-item strong{color:#fff}
+.hint-box{
+  padding:14px;border-radius:8px;background:rgba(0,240,255,0.04);
+  border:1px solid rgba(0,240,255,0.15);font-size:12px;line-height:1.8;
+  color:rgba(255,255,255,0.6);
+}
+.hint-box strong{color:var(--neon-cyan)}
+
+/* Knowledge Card Modal */
+.modal-overlay{
+  display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+  background:rgba(0,0,0,0.8);z-index:100;align-items:center;justify-content:center;padding:20px;
+}
+.modal-overlay.active{display:flex}
+.modal-card{
+  max-width:520px;width:100%;padding:36px;border-radius:16px;position:relative;
+  background:linear-gradient(135deg,rgba(18,18,42,0.98),rgba(10,10,26,0.98));
+  border:1px solid rgba(0,240,255,0.2);box-shadow:0 0 60px rgba(0,240,255,0.1);
+}
+.modal-card h3{font-size:20px;margin-bottom:16px;letter-spacing:2px}
+.modal-card .content{font-size:14px;line-height:2;color:rgba(255,255,255,0.7);margin-bottom:24px;font-family:'Segoe UI',sans-serif}
+.modal-card .content strong{color:var(--neon-cyan)}
+.modal-card .content .highlight-sin{color:var(--sin-color);font-weight:700}
+.modal-card .content .highlight-cos{color:var(--cos-color);font-weight:700}
+.modal-card .content .highlight-tan{color:var(--tan-color);font-weight:700}
+
+/* Summary modal */
+.summary-stars{font-size:32px;margin:16px 0;letter-spacing:8px}
+.star{color:rgba(255,255,255,0.15)}
+.star.active{color:var(--neon-yellow);text-shadow:0 0 15px var(--neon-yellow)}
+.summary-stat{font-size:13px;color:rgba(255,255,255,0.5);margin:6px 0;letter-spacing:1px;font-family:'Segoe UI',sans-serif}
+.summary-stat span{color:#fff;font-weight:700}
+.summary-tip{
+  margin:16px 0;padding:14px;border-radius:8px;font-size:13px;line-height:1.8;
+  background:rgba(57,255,20,0.05);border:1px solid rgba(57,255,20,0.2);
+  color:rgba(255,255,255,0.7);font-family:'Segoe UI',sans-serif;
+}
+.summary-tip strong{color:var(--neon-green)}
+.modal-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+
+/* Responsive */
+@media(max-width:900px){
+  #game-screen{flex-direction:column;height:auto;min-height:100vh}
+  .game-right{width:100%;border-left:none;border-top:1px solid var(--glass-border)}
+  .game-left{min-height:auto;padding:16px 12px}
+}
+@media(max-width:500px){
+  .btn{padding:10px 24px;font-size:13px;letter-spacing:2px}
+  .levels-grid{gap:14px}
+  .level-card{width:100%;max-width:300px;padding:20px}
+  .game-right{padding:16px}
+  .values-display{gap:10px}
+  .val-box{min-width:90px;padding:8px 10px}
+}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(0,240,255,0.2);border-radius:2px}
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+
+<!-- Main Menu -->
+<div id="menu-screen" class="screen active">
+  <div class="menu-tower">
+    <div class="tower-block">第一区</div>
+    <div class="tower-block">第二区</div>
+    <div class="tower-block">第三区</div>
+    <div class="tower-block">?</div>
+    <div class="tower-base"></div>
+  </div>
+  <h1 class="menu-title neon-text">三角之塔</h1>
+  <p class="menu-subtitle">TRIGONOMETRIC TOWER</p>
+  <button class="btn" onclick="showScreen('level-screen')">开始挑战</button>
+  <p style="margin-top:20px;font-size:11px;color:rgba(255,255,255,0.25);letter-spacing:2px">第一区 · 基础三角方程</p>
+</div>
+
+<!-- Level Select -->
+<div id="level-screen" class="screen">
+  <button class="btn btn-small back-btn" onclick="showScreen('menu-screen')">← 返回</button>
+  <div class="level-header">
+    <div class="zone-badge">ZONE 1</div>
+    <h2 class="neon-text">第一区 · 基础三角方程</h2>
+    <p>掌握单位圆，解基础三角方程</p>
+  </div>
+  <div class="levels-grid" id="levels-grid"></div>
+</div>
+
+<!-- Game Screen -->
+<div id="game-screen" class="screen">
+  <button class="btn btn-small back-btn" onclick="exitLevel()">← 退出</button>
+  <div class="game-left">
+    <div class="question-bar">
+      <div class="level-tag" id="level-tag">关卡 1-1</div>
+      <div class="question" id="question-text">求解: sin(x) = 0.5</div>
+    </div>
+    <div class="circle-container">
+      <canvas id="unit-circle" width="400" height="400"></canvas>
+    </div>
+    <div class="values-display">
+      <div class="val-box sin-box glass-panel"><div class="val-label">SIN</div><div class="val-num" id="sin-val">0.000</div></div>
+      <div class="val-box cos-box glass-panel"><div class="val-label">COS</div><div class="val-num" id="cos-val">1.000</div></div>
+      <div class="val-box tan-box glass-panel"><div class="val-label">TAN</div><div class="val-num" id="tan-val">0.000</div></div>
+    </div>
+    <div class="angle-display">角度: <span id="angle-deg">0°</span> &nbsp;|&nbsp; 弧度: <span id="angle-rad">0</span></div>
+    <div class="answer-area" id="answer-area"></div>
+    <div class="answers-needed" id="answers-needed"></div>
+  </div>
+  <div class="game-right">
+    <div class="panel-section">
+      <div class="panel-title">📐 公式参考</div>
+      <div class="formula-item"><strong>sin²θ + cos²θ = 1</strong></div>
+      <div class="formula-item"><strong>tan θ = sin θ / cos θ</strong></div>
+      <div class="formula-item">sin(π - θ) = sin θ</div>
+      <div class="formula-item">cos(π - θ) = -cos θ</div>
+      <div class="formula-item">tan(π + θ) = tan θ</div>
+      <div class="formula-item">周期: sin/cos = 2π, tan = π</div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">💡 提示</div>
+      <div class="hint-box" id="hint-box">拖动单位圆上的指示器来探索角度。</div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-title">📊 进度</div>
+      <div id="progress-info" style="font-size:12px;color:rgba(255,255,255,0.5);line-height:1.8;font-family:'Segoe UI',sans-serif"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Knowledge Card Modal -->
+<div class="modal-overlay" id="knowledge-modal">
+  <div class="modal-card glass-panel">
+    <h3 class="neon-text" id="modal-title">知识卡片</h3>
+    <div class="content" id="modal-content"></div>
+    <div style="text-align:center">
+      <button class="btn" onclick="closeModal('knowledge-modal');startGameplay()">开始挑战 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Summary Modal -->
+<div class="modal-overlay" id="summary-modal">
+  <div class="modal-card glass-panel">
+    <h3 class="neon-green-text" id="summary-title">🎉 关卡通过!</h3>
+    <div class="summary-stars" id="summary-stars"></div>
+    <div id="summary-stats"></div>
+    <div class="summary-tip" id="summary-tip"></div>
+    <div class="modal-btns">
+      <button class="btn btn-small" onclick="closeModal('summary-modal');exitLevel()">返回选关</button>
+      <button class="btn btn-small btn-green" id="next-level-btn" onclick="closeModal('summary-modal');nextLevel()">下一关 →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== Background Particles =====
+const bgCanvas = document.getElementById('bg-canvas');
+const bgCtx = bgCanvas.getContext('2d');
+let particles = [];
+
+function resizeBg() {
+  bgCanvas.width = window.innerWidth;
+  bgCanvas.height = window.innerHeight;
+}
+resizeBg();
+window.addEventListener('resize', resizeBg);
+
+for (let i = 0; i < 60; i++) {
+  particles.push({
+    x: Math.random() * window.innerWidth,
+    y: Math.random() * window.innerHeight,
+    size: Math.random() * 2 + 0.5,
+    speedX: (Math.random() - 0.5) * 0.3,
+    speedY: (Math.random() - 0.5) * 0.3,
+    alpha: Math.random() * 0.4 + 0.1
+  });
+}
+
+function animateBg() {
+  bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+  particles.forEach(p => {
+    p.x += p.speedX; p.y += p.speedY;
+    if (p.x < 0) p.x = bgCanvas.width;
+    if (p.x > bgCanvas.width) p.x = 0;
+    if (p.y < 0) p.y = bgCanvas.height;
+    if (p.y > bgCanvas.height) p.y = 0;
+    bgCtx.beginPath();
+    bgCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    bgCtx.fillStyle = `rgba(0,240,255,${p.alpha})`;
+    bgCtx.fill();
+  });
+  // Connect nearby
+  for (let i = 0; i < particles.length; i++) {
+    for (let j = i + 1; j < particles.length; j++) {
+      const dx = particles[i].x - particles[j].x;
+      const dy = particles[i].y - particles[j].y;
+      const d = Math.sqrt(dx * dx + dy * dy);
+      if (d < 120) {
+        bgCtx.beginPath();
+        bgCtx.moveTo(particles[i].x, particles[i].y);
+        bgCtx.lineTo(particles[j].x, particles[j].y);
+        bgCtx.strokeStyle = `rgba(0,240,255,${0.06 * (1 - d / 120)})`;
+        bgCtx.stroke();
+      }
+    }
+  }
+  requestAnimationFrame(animateBg);
+}
+animateBg();
+
+// ===== Game Data =====
+const LEVELS = [
+  {
+    id: '1-1',
+    equation: 'sin(x) = 0.5',
+    func: 'sin',
+    target: 0.5,
+    answers: [30, 150],
+    hint: '在单位圆上，<strong>sin值</strong>对应的是点的<strong>y坐标</strong>。想一想，哪些角度的y坐标等于0.5？观察第一象限和第二象限。',
+    knowledge: `
+      <p>欢迎来到三角之塔！让我们从<strong>单位圆</strong>开始。</p>
+      <p>单位圆是半径为1的圆，圆心在原点。圆上任意一点的坐标为 <strong>(cos θ, sin θ)</strong>。</p>
+      <p>因此，<span class="highlight-sin">sin θ</span> 就是点的 <strong>y坐标</strong>（红色垂直线）。</p>
+      <p><span class="highlight-cos">cos θ</span> 就是点的 <strong>x坐标</strong>（蓝色水平线）。</p>
+      <p>本关目标：找到所有使 <span class="highlight-sin">sin(x) = 0.5</span> 的角度（0°~360°范围内）。</p>
+    `,
+    summary: `
+      <strong>学习总结：</strong>sin(x) = 0.5 的解是 <strong>30°</strong> 和 <strong>150°</strong>。<br><br>
+      规律：如果 sin(α) = k，那么在 [0°, 360°) 内，解为 <strong>α</strong> 和 <strong>180° - α</strong>（当两者不同时）。<br>
+      这是因为 sin(π - θ) = sin θ，即关于 y 轴对称的两个角具有相同的 sin 值。
+    `
+  },
+  {
+    id: '1-2',
+    equation: 'cos(x) = -√2/2',
+    func: 'cos',
+    target: -Math.SQRT2 / 2,
+    answers: [135, 225],
+    hint: '在单位圆上，<strong>cos值</strong>对应的是点的<strong>x坐标</strong>。cos为负值时，点在单位圆的<strong>左半部分</strong>（第二、三象限）。',
+    knowledge: `
+      <p>本关我们探索 <span class="highlight-cos">cos(余弦)</span> 方程。</p>
+      <p>回顾：<span class="highlight-cos">cos θ</span> 是单位圆上点的 <strong>x坐标</strong>（蓝色水平线）。</p>
+      <p>特殊值 <strong>√2/2 ≈ 0.707</strong> 出现在 45° 的相关角中。</p>
+      <p>当 cos 为<strong>负值</strong>时，角在第二或第三象限。</p>
+      <p>本关目标：找到所有使 <span class="highlight-cos">cos(x) = -√2/2</span> 的角度。</p>
+    `,
+    summary: `
+      <strong>学习总结：</strong>cos(x) = -√2/2 的解是 <strong>135°</strong> 和 <strong>225°</strong>。<br><br>
+      规律：如果 cos(α) = k，那么在 [0°, 360°) 内，解为 <strong>α</strong> 和 <strong>360° - α</strong>。<br>
+      对于 cos(x) = -√2/2，参考角是 45°，所以解是 180°-45°=135° 和 180°+45°=225°。<br>
+      这是因为 cos(2π - θ) = cos θ，即关于 x 轴对称的两个角具有相同的 cos 值。
+    `
+  },
+  {
+    id: '1-3',
+    equation: 'tan(x) = 1',
+    func: 'tan',
+    target: 1,
+    answers: [45, 225],
+    hint: '<strong>tan值</strong>等于 sin/cos。tan=1 意味着 sin 和 cos <strong>相等</strong>。想一想在哪些象限里 sin 和 cos 有相同的符号且绝对值相等？',
+    knowledge: `
+      <p>最后一关！我们来看 <span class="highlight-tan">tan(正切)</span> 方程。</p>
+      <p><span class="highlight-tan">tan θ = sin θ / cos θ</span>，它代表单位圆上点到x轴的"斜率"。</p>
+      <p>tan = 1 意味着 sin θ = cos θ，即点在 <strong>y = x</strong> 这条线上。</p>
+      <p>注意：tan 的周期是 <strong>π (180°)</strong>，比 sin/cos 的 2π 短一半。</p>
+      <p>本关目标：找到所有使 <span class="highlight-tan">tan(x) = 1</span> 的角度。</p>
+    `,
+    summary: `
+      <strong>学习总结：</strong>tan(x) = 1 的解是 <strong>45°</strong> 和 <strong>225°</strong>。<br><br>
+      规律：tan 的周期是 <strong>180°</strong>，所以如果 tan(α) = k，那么 <strong>α + 180°</strong> 也是解。<br>
+      tan(x) = 1 → x = 45° + n·180°，在 [0°, 360°) 内为 45° 和 225°。<br>
+      这两个角在对角象限（第一和第三），sin 和 cos 在这两个象限符号相同，所以比值为正。
+    `
+  }
+];
+
+// ===== Game State =====
+let currentLevel = null;
+let currentAngle = 0; // radians
+let foundAnswers = [];
+let attempts = 0;
+let startTime = 0;
+let completed = [false, false, false];
+let isDragging = false;
+
+// ===== Screen Management =====
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (id === 'level-screen') renderLevels();
+}
+
+function renderLevels() {
+  const grid = document.getElementById('levels-grid');
+  grid.innerHTML = '';
+  LEVELS.forEach((lv, i) => {
+    const card = document.createElement('div');
+    card.className = `level-card glass-panel ${completed[i] ? 'completed' : ''}`;
+    card.innerHTML = `
+      <div class="level-num">${lv.id}</div>
+      <div class="level-eq">${lv.equation}</div>
+      <div class="level-desc">找到0°~360°范围内所有满足方程的角度</div>
+    `;
+    card.onclick = () => startLevel(i);
+    grid.appendChild(card);
+  });
+}
+
+// ===== Level Start =====
+function startLevel(idx) {
+  currentLevel = idx;
+  foundAnswers = [];
+  attempts = 0;
+  currentAngle = 0;
+  showScreen('game-screen');
+
+  const lv = LEVELS[idx];
+  document.getElementById('level-tag').textContent = `关卡 ${lv.id}`;
+  document.getElementById('question-text').textContent = `求解: ${lv.equation}`;
+  document.getElementById('hint-box').innerHTML = lv.hint;
+
+  renderAnswerSlots();
+  updateProgress();
+  resizeCircleCanvas();
+  drawCircle();
+
+  // Show knowledge card
+  document.getElementById('modal-title').textContent = `关卡 ${lv.id} · 知识卡片`;
+  document.getElementById('modal-content').innerHTML = lv.knowledge;
+  openModal('knowledge-modal');
+}
+
+function startGameplay() {
+  startTime = Date.now();
+}
+
+function exitLevel() {
+  showScreen('level-screen');
+  currentLevel = null;
+}
+
+// ===== Answer Slots =====
+function renderAnswerSlots() {
+  const area = document.getElementById('answer-area');
+  const lv = LEVELS[currentLevel];
+  area.innerHTML = '';
+  lv.answers.forEach((_, i) => {
+    const slot = document.createElement('div');
+    slot.className = 'answer-slot';
+    slot.id = `slot-${i}`;
+    slot.textContent = '?';
+    area.appendChild(slot);
+  });
+  const btn = document.createElement('button');
+  btn.className = 'btn btn-small btn-green submit-angle-btn';
+  btn.textContent = '提交角度';
+  btn.onclick = submitAnswer;
+  area.appendChild(btn);
+
+  document.getElementById('answers-needed').textContent =
+    `需要找到 ${lv.answers.length} 个角度 (0° ≤ x < 360°)`;
+}
+
+function submitAnswer() {
+  const lv = LEVELS[currentLevel];
+  const deg = Math.round(currentAngle * 180 / Math.PI + 360) % 360;
+  attempts++;
+
+  // Check if already found
+  if (foundAnswers.includes(deg)) return;
+
+  // Check against answers with tolerance
+  let matchIdx = -1;
+  lv.answers.forEach((ans, i) => {
+    if (Math.abs(deg - ans) <= 3 && !foundAnswers.some(fa => Math.abs(fa - ans) <= 3)) {
+      matchIdx = i;
+    }
+  });
+
+  if (matchIdx >= 0) {
+    foundAnswers.push(lv.answers[matchIdx]);
+    const slot = document.getElementById(`slot-${matchIdx}`);
+    slot.textContent = `${lv.answers[matchIdx]}°`;
+    slot.classList.add('filled');
+
+    // Flash
+    slot.style.transform = 'scale(1.15)';
+    setTimeout(() => slot.style.transform = '', 300);
+
+    updateProgress();
+
+    // Check completion
+    if (foundAnswers.length === lv.answers.length) {
+      setTimeout(() => showSummary(), 600);
+    }
+  } else {
+    // Wrong - shake all unfilled
+    document.querySelectorAll('.answer-slot:not(.filled)').forEach(s => {
+      s.classList.add('wrong');
+      setTimeout(() => s.classList.remove('wrong'), 500);
+    });
+  }
+}
+
+function updateProgress() {
+  const lv = LEVELS[currentLevel];
+  document.getElementById('progress-info').innerHTML = `
+    已找到: <span style="color:var(--neon-green)">${foundAnswers.length}</span> / ${lv.answers.length} 个解<br>
+    尝试次数: ${attempts}<br>
+    ${foundAnswers.map(a => `✓ ${a}°`).join('<br>')}
+  `;
+}
+
+// ===== Summary =====
+function showSummary() {
+  const lv = LEVELS[currentLevel];
+  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+  const stars = attempts <= lv.answers.length ? 3 : attempts <= lv.answers.length + 2 ? 2 : 1;
+
+  completed[currentLevel] = true;
+
+  let starsHtml = '';
+  for (let i = 0; i < 3; i++) {
+    starsHtml += `<span class="star ${i < stars ? 'active' : ''}">★</span>`;
+  }
+
+  document.getElementById('summary-title').textContent = `🎉 关卡 ${lv.id} 通过!`;
+  document.getElementById('summary-stars').innerHTML = starsHtml;
+  document.getElementById('summary-stats').innerHTML = `
+    <div class="summary-stat">用时: <span>${elapsed}秒</span></div>
+    <div class="summary-stat">尝试次数: <span>${attempts}</span></div>
+    <div class="summary-stat">答案: <span>${lv.answers.map(a => a + '°').join(', ')}</span></div>
+  `;
+  document.getElementById('summary-tip').innerHTML = lv.summary;
+
+  const nextBtn = document.getElementById('next-level-btn');
+  if (currentLevel < LEVELS.length - 1) {
+    nextBtn.style.display = '';
+    nextBtn.textContent = '下一关 →';
+  } else {
+    nextBtn.style.display = '';
+    nextBtn.textContent = '🏆 全部通关!';
+    nextBtn.onclick = () => { closeModal('summary-modal'); showScreen('level-screen'); };
+  }
+
+  openModal('summary-modal');
+}
+
+function nextLevel() {
+  if (currentLevel < LEVELS.length - 1) {
+    startLevel(currentLevel + 1);
+  } else {
+    showScreen('level-screen');
+  }
+}
+
+// ===== Modal =====
+function openModal(id) { document.getElementById(id).classList.add('active'); }
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+// ===== Unit Circle =====
+const circleCanvas = document.getElementById('unit-circle');
+const ctx = circleCanvas.getContext('2d');
+let cx, cy, radius;
+
+function resizeCircleCanvas() {
+  const container = document.querySelector('.game-left');
+  const maxSize = Math.min(container.clientWidth - 40, 420, window.innerHeight - 340);
+  const size = Math.max(280, maxSize);
+  circleCanvas.width = size;
+  circleCanvas.height = size;
+  cx = size / 2;
+  cy = size / 2;
+  radius = size / 2 - 50;
+}
+
+window.addEventListener('resize', () => {
+  if (currentLevel !== null) { resizeCircleCanvas(); drawCircle(); }
+});
+
+function drawCircle() {
+  const w = circleCanvas.width, h = circleCanvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  const lv = LEVELS[currentLevel];
+  const sinV = Math.sin(currentAngle);
+  const cosV = Math.cos(currentAngle);
+  const tanV = Math.tan(currentAngle);
+  const px = cx + cosV * radius;
+  const py = cy - sinV * radius;
+
+  // Grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 1;
+  for (let i = -1; i <= 1; i += 0.5) {
+    ctx.beginPath(); ctx.moveTo(cx + i * radius, cy - radius - 20); ctx.lineTo(cx + i * radius, cy + radius + 20); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx - radius - 20, cy - i * radius); ctx.lineTo(cx + radius + 20, cy - i * radius); ctx.stroke();
+  }
+
+  // Axes
+  ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(cx - radius - 30, cy); ctx.lineTo(cx + radius + 30, cy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx, cy - radius - 30); ctx.lineTo(cx, cy + radius + 30); ctx.stroke();
+
+  // Axis labels
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.font = '12px Orbitron';
+  ctx.textAlign = 'center';
+  ctx.fillText('0°', cx + radius + 22, cy + 4);
+  ctx.fillText('90°', cx, cy - radius - 14);
+  ctx.fillText('180°', cx - radius - 26, cy + 4);
+  ctx.fillText('270°', cx, cy + radius + 20);
+
+  // Axis values
+  ctx.font = '10px Courier New';
+  ctx.fillStyle = 'rgba(255,255,255,0.2)';
+  ctx.fillText('1', cx + radius + 4, cy - 8);
+  ctx.fillText('-1', cx - radius - 8, cy - 8);
+  ctx.fillText('1', cx + 12, cy - radius - 2);
+  ctx.fillText('-1', cx + 14, cy + radius + 12);
+
+  // Unit circle
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Circle glow
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(0,240,255,0.08)';
+  ctx.lineWidth = 6;
+  ctx.stroke();
+
+  // Special angle marks
+  const specialAngles = [0,30,45,60,90,120,135,150,180,210,225,240,270,300,315,330];
+  specialAngles.forEach(deg => {
+    const rad = deg * Math.PI / 180;
+    const mx = cx + Math.cos(rad) * radius;
+    const my = cy - Math.sin(rad) * radius;
+    ctx.beginPath();
+    ctx.arc(mx, my, 2.5, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0,240,255,0.3)';
+    ctx.fill();
+  });
+
+  // Angle arc
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.arc(cx, cy, radius * 0.2, 0, -currentAngle, currentAngle > 0);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(0,240,255,0.06)';
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius * 0.2, 0, -currentAngle, currentAngle > 0);
+  ctx.strokeStyle = 'rgba(0,240,255,0.4)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Target line (the value to hit)
+  ctx.setLineDash([6, 4]);
+  ctx.lineWidth = 1.5;
+  if (lv.func === 'sin') {
+    const ty = cy - lv.target * radius;
+    ctx.strokeStyle = 'rgba(255,68,102,0.35)';
+    ctx.beginPath(); ctx.moveTo(cx - radius - 10, ty); ctx.lineTo(cx + radius + 10, ty); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,68,102,0.5)';
+    ctx.font = '11px Orbitron';
+    ctx.textAlign = 'left';
+    ctx.fillText(`y = ${lv.target}`, cx + radius + 14, ty + 4);
+  } else if (lv.func === 'cos') {
+    const tx = cx + lv.target * radius;
+    ctx.strokeStyle = 'rgba(68,136,255,0.35)';
+    ctx.beginPath(); ctx.moveTo(tx, cy - radius - 10); ctx.lineTo(tx, cy + radius + 10); ctx.stroke();
+    ctx.fillStyle = 'rgba(68,136,255,0.5)';
+    ctx.font = '11px Orbitron';
+    ctx.textAlign = 'center';
+    ctx.fillText(`x = ${lv.target.toFixed(3)}`, tx, cy - radius - 14);
+  } else if (lv.func === 'tan') {
+    // Draw y=x line (tan=1 means slope 1)
+    ctx.strokeStyle = 'rgba(255,170,0,0.2)';
+    ctx.beginPath();
+    ctx.moveTo(cx - radius, cy + radius);
+    ctx.lineTo(cx + radius, cy - radius);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,170,0,0.4)';
+    ctx.font = '11px Orbitron';
+    ctx.textAlign = 'left';
+    ctx.fillText('y = x (tan=1)', cx + radius * 0.4, cy - radius * 0.4 - 8);
+  }
+  ctx.setLineDash([]);
+
+  // Found answer markers
+  foundAnswers.forEach(deg => {
+    const rad = deg * Math.PI / 180;
+    const ax = cx + Math.cos(rad) * radius;
+    const ay = cy - Math.sin(rad) * radius;
+
+    ctx.beginPath();
+    ctx.arc(ax, ay, 8, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(57,255,20,0.15)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(57,255,20,0.7)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(57,255,20,0.8)';
+    ctx.font = 'bold 11px Orbitron';
+    ctx.textAlign = 'center';
+    const lx = cx + Math.cos(rad) * (radius + 20);
+    const ly = cy - Math.sin(rad) * (radius + 20);
+    ctx.fillText(`${deg}°`, lx, ly);
+  });
+
+  // Cos line (horizontal, blue)
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(px, cy);
+  ctx.strokeStyle = 'rgba(68,136,255,0.8)';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  // cos label
+  ctx.fillStyle = 'rgba(68,136,255,0.9)';
+  ctx.font = 'bold 11px Orbitron';
+  ctx.textAlign = 'center';
+  ctx.fillText('cos', (cx + px) / 2, cy + 16);
+
+  // Sin line (vertical, red)
+  ctx.beginPath();
+  ctx.moveTo(px, cy);
+  ctx.lineTo(px, py);
+  ctx.strokeStyle = 'rgba(255,68,102,0.8)';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  // sin label
+  ctx.fillStyle = 'rgba(255,68,102,0.9)';
+  ctx.font = 'bold 11px Orbitron';
+  ctx.textAlign = 'left';
+  ctx.fillText('sin', px + 8, (cy + py) / 2);
+
+  // Radius line
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(px, py);
+  ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Point on circle
+  ctx.beginPath();
+  ctx.arc(px, py, 7, 0, Math.PI * 2);
+  const grd = ctx.createRadialGradient(px, py, 0, px, py, 7);
+  grd.addColorStop(0, '#fff');
+  grd.addColorStop(1, 'rgba(0,240,255,0.8)');
+  ctx.fillStyle = grd;
+  ctx.fill();
+
+  // Point glow
+  ctx.beginPath();
+  ctx.arc(px, py, 14, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(0,240,255,0.1)';
+  ctx.fill();
+
+  // Coordinate label
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  ctx.font = '11px Courier New';
+  ctx.textAlign = 'left';
+  const labelX = px + 16;
+  const labelY = py - 12;
+  ctx.fillText(`(${cosV.toFixed(2)}, ${sinV.toFixed(2)})`, labelX, labelY);
+
+  // Update values
+  document.getElementById('sin-val').textContent = sinV.toFixed(3);
+  document.getElementById('cos-val').textContent = cosV.toFixed(3);
+  document.getElementById('tan-val').textContent = Math.abs(cosV) < 0.001 ? '∞' : tanV.toFixed(3);
+
+  const degVal = ((currentAngle * 180 / Math.PI) % 360 + 360) % 360;
+  document.getElementById('angle-deg').textContent = `${degVal.toFixed(1)}°`;
+
+  // Nice radian display
+  document.getElementById('angle-rad').textContent = radianStr(currentAngle);
+}
+
+function radianStr(rad) {
+  const deg = ((rad * 180 / Math.PI) % 360 + 360) % 360;
+  const nice = [
+    [0,'0'],[30,'π/6'],[45,'π/4'],[60,'π/3'],[90,'π/2'],
+    [120,'2π/3'],[135,'3π/4'],[150,'5π/6'],[180,'π'],
+    [210,'7π/6'],[225,'5π/4'],[240,'4π/3'],[270,'3π/2'],
+    [300,'5π/3'],[315,'7π/4'],[330,'11π/6'],[360,'2π']
+  ];
+  for (const [d, s] of nice) {
+    if (Math.abs(deg - d) < 2) return s;
+  }
+  return (rad >= 0 ? rad : rad + 2 * Math.PI).toFixed(2);
+}
+
+// ===== Interaction =====
+function getAngleFromEvent(e) {
+  const rect = circleCanvas.getBoundingClientRect();
+  let clientX, clientY;
+  if (e.touches) {
+    clientX = e.touches[0].clientX;
+    clientY = e.touches[0].clientY;
+  } else {
+    clientX = e.clientX;
+    clientY = e.clientY;
+  }
+  const x = clientX - rect.left - cx;
+  const y = -(clientY - rect.top - cy);
+  return Math.atan2(y, x);
+}
+
+function snapAngle(angle) {
+  let deg = ((angle * 180 / Math.PI) % 360 + 360) % 360;
+  const snapAngles = [0,30,45,60,90,120,135,150,180,210,225,240,270,300,315,330,360];
+  for (const sa of snapAngles) {
+    if (Math.abs(deg - sa) < 4) {
+      return (sa % 360) * Math.PI / 180;
+    }
+  }
+  // Snap to integer degrees
+  deg = Math.round(deg);
+  return deg * Math.PI / 180;
+}
+
+circleCanvas.addEventListener('mousedown', (e) => { isDragging = true; handleDrag(e); });
+circleCanvas.addEventListener('mousemove', (e) => { if (isDragging) handleDrag(e); });
+window.addEventListener('mouseup', () => { isDragging = false; });
+
+circleCanvas.addEventListener('touchstart', (e) => { e.preventDefault(); isDragging = true; handleDrag(e); }, {passive: false});
+circleCanvas.addEventListener('touchmove', (e) => { e.preventDefault(); if (isDragging) handleDrag(e); }, {passive: false});
+window.addEventListener('touchend', () => { isDragging = false; });
+
+function handleDrag(e) {
+  if (currentLevel === null) return;
+  currentAngle = snapAngle(getAngleFromEvent(e));
+  drawCircle();
+}
+
+// Click to also work
+circleCanvas.addEventListener('click', (e) => {
+  if (currentLevel === null) return;
+  currentAngle = snapAngle(getAngleFromEvent(e));
+  drawCircle();
+});
+
+// Keyboard support
+document.addEventListener('keydown', (e) => {
+  if (currentLevel === null) return;
+  if (e.key === 'ArrowLeft') {
+    currentAngle += Math.PI / 180;
+    drawCircle();
+  } else if (e.key === 'ArrowRight') {
+    currentAngle -= Math.PI / 180;
+    drawCircle();
+  } else if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    submitAnswer();
+  }
+});
+
+// Init
+renderLevels();
+</script>
+</body>
+</html>
