@@ -1,0 +1,28 @@
+/* ===== Zone Select Screen ===== */
+#zone-screen{flex-direction:column;align-items:center;padding:40px 20px;z-index:1}
+.zone-card{width:300px;padding:32px 24px;cursor:pointer;transition:all .3s;position:relative;overflow:hidden;text-align:center}
+.zone-card:hover{transform:translateY(-4px)}
+.zone-card.locked{opacity:.3;pointer-events:none;filter:grayscale(0.5)}
+.zone-card .zone-num{font-size:42px;font-weight:900;margin-bottom:8px}
+.zone-card .zone-name{font-size:16px;font-weight:700;margin-bottom:8px}
+.zone-card .zone-desc{font-size:12px;color:rgba(255,255,255,0.4);line-height:1.6;letter-spacing:1px}
+.zone-card.z-cyan .zone-num{color:var(--neon-cyan)}
+.zone-card.z-cyan:hover{border-color:var(--neon-cyan);box-shadow:0 8px 30px rgba(0,240,255,0.15)}
+.zone-card.z-pink .zone-num{color:var(--neon-pink)}
+.zone-card.z-pink:hover{border-color:var(--neon-pink);box-shadow:0 8px 30px rgba(255,45,149,0.15)}
+.zone-card.zone-done::after{content:'\2713 \5df2\901a\5173';position:absolute;top:12px;right:16px;color:var(--neon-green);font-size:12px;letter-spacing:1px}
+
+/* ===== Zone 2 Pink Theme ===== */
+.z2-theme .zone-badge{border-color:var(--neon-pink)!important;color:var(--neon-pink)!important}
+.z2-theme #zone-title{text-shadow:0 0 10px var(--neon-pink),0 0 30px var(--neon-pink),0 0 60px rgba(255,45,149,0.3)}
+.z2-theme .level-num{color:var(--neon-pink)!important}
+.z2-theme .level-card::before{background:linear-gradient(90deg,transparent,var(--neon-pink),transparent)!important}
+.z2-theme .level-card:hover{border-color:rgba(255,45,149,0.3)!important;box-shadow:0 8px 30px rgba(255,45,149,0.1)!important}
+.z2-theme .panel-title{color:var(--neon-pink)!important}
+.z2-theme .level-tag{color:var(--neon-pink)!important}
+.z2-theme .hint-box{background:rgba(255,45,149,0.04)!important;border-color:rgba(255,45,149,0.15)!important}
+.z2-theme .hint-box strong{color:var(--neon-pink)!important}
+
+/* ===== Double Angle Value Box ===== */
+.val-box.dbl-box{border:1px solid var(--neon-pink);background:rgba(255,45,149,0.08)}
+.val-box.dbl-box .val-num{color:var(--neon-pink)}

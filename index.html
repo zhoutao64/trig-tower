@@ -216,6 +216,7 @@ canvas{display:block}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:rgba(0,240,255,0.2);border-radius:2px}
 </style>
+<link rel="stylesheet" href="zone2.css">
 </head>
 <body>
 
@@ -232,16 +233,23 @@ canvas{display:block}
   </div>
   <h1 class="menu-title neon-text">三角之塔</h1>
   <p class="menu-subtitle">TRIGONOMETRIC TOWER</p>
-  <button class="btn" onclick="showScreen('level-screen')">开始挑战</button>
-  <p style="margin-top:20px;font-size:11px;color:rgba(255,255,255,0.25);letter-spacing:2px">第一区 · 基础三角方程</p>
+  <button class="btn" onclick="showScreen('zone-screen')">开始挑战</button>
+  <p style="margin-top:20px;font-size:11px;color:rgba(255,255,255,0.25);letter-spacing:2px">选择你的区域</p>
+</div>
+
+<!-- Zone Select -->
+<div id="zone-screen" class="screen" style="flex-direction:column;align-items:center;justify-content:center;gap:30px;z-index:1">
+  <button class="btn btn-small back-btn" onclick="showScreen('menu-screen')">← 返回</button>
+  <h2 class="neon-text" style="font-size:clamp(20px,4vw,32px);letter-spacing:4px">选择区域</h2>
+  <div id="zone-cards" style="display:flex;gap:24px;flex-wrap:wrap;justify-content:center"></div>
 </div>
 
 <!-- Level Select -->
 <div id="level-screen" class="screen">
   <button class="btn btn-small back-btn" onclick="showScreen('menu-screen')">← 返回</button>
   <div class="level-header">
-    <div class="zone-badge">ZONE 1</div>
-    <h2 class="neon-text">第一区 · 基础三角方程</h2>
+    <div class="zone-badge" id="zone-badge-text">ZONE 1</div>
+    <h2 class="neon-text" id="zone-title">第一区 · 基础三角方程</h2>
     <p>掌握单位圆，解基础三角方程</p>
   </div>
   <div class="levels-grid" id="levels-grid"></div>
@@ -926,5 +934,7 @@ document.addEventListener('keydown', (e) => {
 // Init
 renderLevels();
 </script>
+<script src="zone2-data.js"></script>
+<script src="zones.js"></script>
 </body>
 </html>
