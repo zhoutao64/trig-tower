@@ -1,0 +1,19 @@
+/* ===== Zone 3 Purple Theme ===== */
+.neon-purple-text{text-shadow:0 0 10px var(--neon-purple),0 0 30px var(--neon-purple)}
+.z3-theme .zone-badge{border-color:var(--neon-purple)!important;color:var(--neon-purple)!important}
+.z3-theme #zone-title{text-shadow:0 0 10px var(--neon-purple),0 0 30px var(--neon-purple),0 0 60px rgba(180,77,255,0.3)}
+.z3-theme .level-num{color:var(--neon-purple)!important}
+.z3-theme .level-card::before{background:linear-gradient(90deg,transparent,var(--neon-purple),transparent)!important}
+.z3-theme .level-card:hover{border-color:rgba(180,77,255,0.3)!important;box-shadow:0 8px 30px rgba(180,77,255,0.1)!important}
+.z3-theme .panel-title{color:var(--neon-purple)!important}
+.z3-theme .level-tag{color:var(--neon-purple)!important}
+.z3-theme .hint-box{background:rgba(180,77,255,0.04)!important;border-color:rgba(180,77,255,0.15)!important}
+.z3-theme .hint-box strong{color:var(--neon-purple)!important}
+
+/* ===== Zone 3 Value Box ===== */
+.val-box.z3-box{border:1px solid var(--neon-purple);background:rgba(180,77,255,0.08)}
+.val-box.z3-box .val-num{color:var(--neon-purple)}
+
+/* ===== Zone Card Purple ===== */
+.zone-card.z-purple .zone-num{color:var(--neon-purple)}
+.zone-card.z-purple:hover{border-color:var(--neon-purple);box-shadow:0 8px 30px rgba(180,77,255,0.15)}
